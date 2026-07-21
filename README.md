@@ -1,5 +1,7 @@
 # teatop
 
+![demo](demo.gif)
+
 A CPU, memory and GPU monitor for the terminal on Linux and macOS, written in
 Rust with [crossterm](https://github.com/crossterm-rs/crossterm).
 
