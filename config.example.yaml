@@ -1,0 +1,38 @@
+# teatop configuration
+#
+# Copy this file to ~/.config/teatop/config.yaml (or pass -config <path>).
+# Every key is optional; a missing key keeps its default. The values below
+# are the defaults.
+
+# Dashboard sections
+cpu: true        # CPU gauge (utilization, frequency, temperature)
+memory: true     # memory gauge
+swap: true       # swap gauge (only shown when swap exists)
+disk: true       # root filesystem gauge and the all-disks popup (d)
+gpu: true        # GPU gauges, chart series and table columns
+history: true    # utilization history chart at startup (toggle with h)
+cores: false     # per-core bars at startup (toggle with c)
+processes: true  # process table
+system: true     # header (load, uptime), disk rates and the network popup (n)
+
+# Hooks: run a shell command when a metric crosses a threshold.
+# Metrics: cpu, mem, swap, disk, gpu, gpu_mem (percentages, 0-100)
+# and cpu_temp (degrees Celsius).
+# A hook fires once when the condition becomes true (after holding for
+# "for", when set) and re-arms when it becomes false again, running
+# "on_recover" if it had fired; with a cooldown it re-fires at that
+# interval while the condition stays true. The command runs in the
+# background via sh -c with TEATOP_METRIC, TEATOP_VALUE and
+# TEATOP_THRESHOLD in its environment; failures show in the status bar
+# with the first line of stderr.
+#
+# YAML-quote the whole command (single quotes) when it contains ": ",
+# e.g. a push notification via ntfy:
+#   run: 'curl -fsS --max-time 10 -d "teatop: memory high" ntfy.sh/mytopic'
+hooks:
+  - metric: mem
+    above: 85
+    run: notify-send "teatop" "memory above 85% (${TEATOP_VALUE}%)"
+    for: 30s
+    cooldown: 10m
+    on_recover: notify-send "teatop" "memory back below 85%"

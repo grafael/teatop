@@ -1,0 +1,107 @@
+# teatop-rs
+
+A CPU, memory and GPU monitor for the terminal on Linux and macOS, written in
+Rust with [crossterm](https://github.com/crossterm-rs/crossterm). A port of the
+Go [teatop](../), feature-for-feature.
+
+- htop-style meters for CPU, memory, swap, disk, GPU and VRAM, each with
+  its own identity color across gauges and chart.
+- Braille history chart, one solid-color lane per metric.
+- Per-core bars (toggle with `c`), process table with sort, substring
+  search, tree view, own-processes filter and kill — mouse works too.
+- All-filesystems disk view (`d`): usage bars for every mounted disk plus a
+  full-screen per-process I/O page.
+- Network view (`n`): a full-screen page of live connections — owning
+  process, remote endpoint and per-connection download/upload — with sort by
+  download/upload/total (`d`/`u`/`t`), substring search, a movable selection
+  and kill, alongside the throughput chart and local/external IPs kept off
+  the main screen (screenshot-safe).
+- Header with load averages (colored against your core count) and uptime.
+- NVIDIA GPU telemetry via [nvml-wrapper](https://github.com/Cldfire/nvml-wrapper),
+  including per-process GPU usage; degrades gracefully without a GPU.
+- Hooks: run a shell command when a metric crosses a threshold.
+- Remembers your sort, filters, toggles and refresh rate between runs — in
+  `~/.config/teatop/state.yaml`, the same format the Go build uses.
+
+## Install
+
+Requires a recent Rust toolchain on Linux or macOS.
+
+```sh
+cargo build --release      # produces ./target/release/teatop-rs
+```
+
+**Linux** uses `/proc`, `sysfs`, `statvfs` and NVIDIA NVML directly. GPU
+monitoring needs the driver (`libnvidia-ml.so`); without it the GPU section
+hides itself. Per-connection bandwidth comes from the kernel's `sock_diag`
+(netlink), and per-process disk I/O from `/proc/<pid>/io` — seeing every
+process's connections/IO needs `sudo`.
+
+**macOS** uses the cross-platform [`sysinfo`](https://crates.io/crates/sysinfo)
+backend, plus `nettop` for per-connection bandwidth (no root needed) and
+`proc_pid_rusage` (libproc) for per-process disk I/O (other users' processes
+need `sudo`). As on the Go build, the GPU section hides itself, and CPU
+frequency/temperature and the aggregate disk-throughput readout are not
+available.
+
+## Usage
+
+```
+teatop-rs [options]
+
+  -d, -delay int    update interval in ms (100 to 5000, default 1000)
+  -c, -all-cpus     show the per-core bar chart on startup
+  -config path      config file path (default ~/.config/teatop/config.yaml)
+  -version          print version and exit
+```
+
+Keys: `q` quit · `c` cores · `h` history · `d` disks view ·
+`n` network view · `t` tree · `u` mine · `p`/`m`/`g` sort (again to reverse) ·
+`/` search · `x` kill · `space` pause · `-`/`+` refresh rate ·
+arrows/`j`/`k`/PgUp/PgDn/Home/End navigate · `Esc` closes the popup or view,
+or clears the search filter. Click a row to select, a column header to sort;
+the wheel scrolls. On the network view `d`/`u`/`t` sort by
+download/upload/total, and `/`, `x` and `space` search, kill and pause its
+connections.
+
+## Configuration
+
+teatop reads `~/.config/teatop/config.yaml` (or `-config <path>`) to show or
+hide dashboard sections and to declare hooks — shell commands that run when a
+metric crosses a threshold:
+
+```yaml
+gpu: false           # hide a section (all sections default to on)
+hooks:
+  - metric: mem      # cpu, mem, swap, disk, gpu, gpu_mem, cpu_temp
+    above: 85        # or below:
+    run: notify-send "teatop" "memory above 85%"
+```
+
+[`config.example.yaml`](config.example.yaml) documents every option,
+including hook hold time, cooldown, recovery commands and the environment
+variables passed to the command.
+
+## Development
+
+```sh
+cargo build          # compile
+cargo test           # run the suite
+cargo clippy         # lints
+```
+
+## Notes on the port
+
+This is a faithful reimplementation of the Go original. The Bubble Tea model
+maps to a hand-rolled crossterm event loop, and lipgloss styling to a small
+ANSI helper. The metric layer mirrors gopsutil's per-platform split:
+
+- **Linux** — direct `/proc` and `sysfs` reads (via the `procfs` crate) plus
+  `statvfs`, go-nvml → `nvml-wrapper`, and the sock_diag netlink code as a
+  `libc` raw-socket port of the same byte layout.
+- **macOS** — the `sysinfo` crate for CPU/memory/load/uptime/network/disk/
+  processes, a port of the Go `nettop` parser for per-connection bandwidth,
+  and `proc_pid_rusage`/`proc_pidinfo` (libproc) for per-process disk I/O.
+
+The Linux build is verified end to end; the macOS build is type-checked
+against `aarch64-apple-darwin` and mirrors the Go darwin behaviour.
