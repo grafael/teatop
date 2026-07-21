@@ -1009,7 +1009,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "teatop-rs"
+name = "teatop"
 version = "3.0.0"
 dependencies = [
  "crossterm",

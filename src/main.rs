@@ -1,3 +1,3 @@
 fn main() {
-    teatop_rs::run();
+    teatop::run();
 }

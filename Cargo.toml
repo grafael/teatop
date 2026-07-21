@@ -1,5 +1,5 @@
 [package]
-name = "teatop-rs"
+name = "teatop"
 version = "3.0.0"
 edition = "2024"
 
@@ -18,10 +18,10 @@ procfs = "0.18.0"
 nvml-wrapper = "0.12.1"
 ureq = { version = "3.3.0", default-features = false, features = ["rustls"] }
 
-# Everywhere else (macOS): the cross-platform sysinfo backend stands in for the
-# gopsutil role the Go build used, alongside libproc/nettop for the per-process
-# I/O and per-connection bandwidth pages. TLS uses the system Security.framework
-# via native-tls rather than pulling ring's C sources.
+# Everywhere else (macOS): the cross-platform sysinfo backend, alongside
+# libproc/nettop for the per-process I/O and per-connection bandwidth pages.
+# TLS uses the system Security.framework via native-tls rather than pulling
+# ring's C sources.
 [target.'cfg(not(target_os = "linux"))'.dependencies]
 sysinfo = "0.37"
 ureq = { version = "3.3.0", default-features = false, features = ["native-tls"] }

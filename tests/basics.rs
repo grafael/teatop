@@ -3,10 +3,10 @@
 //! clamping and ANSI-aware width measurement.
 
 use std::time::Duration;
-use teatop_rs::config::parse_duration;
-use teatop_rs::style::{self, Style, RED, YELLOW};
-use teatop_rs::text::{format_bytes, format_uptime, load_color};
-use teatop_rs::ui::clamp_interval;
+use teatop::config::parse_duration;
+use teatop::style::{self, Style, RED, YELLOW};
+use teatop::text::{format_bytes, format_uptime, load_color};
+use teatop::ui::clamp_interval;
 
 #[test]
 fn duration_parsing() {

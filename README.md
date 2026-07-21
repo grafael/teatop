@@ -1,8 +1,7 @@
-# teatop-rs
+# teatop
 
 A CPU, memory and GPU monitor for the terminal on Linux and macOS, written in
-Rust with [crossterm](https://github.com/crossterm-rs/crossterm). A port of the
-Go [teatop](../), feature-for-feature.
+Rust with [crossterm](https://github.com/crossterm-rs/crossterm).
 
 - htop-style meters for CPU, memory, swap, disk, GPU and VRAM, each with
   its own identity color across gauges and chart.
@@ -21,14 +20,14 @@ Go [teatop](../), feature-for-feature.
   including per-process GPU usage; degrades gracefully without a GPU.
 - Hooks: run a shell command when a metric crosses a threshold.
 - Remembers your sort, filters, toggles and refresh rate between runs — in
-  `~/.config/teatop/state.yaml`, the same format the Go build uses.
+  `~/.config/teatop/state.yaml`.
 
 ## Install
 
 Requires a recent Rust toolchain on Linux or macOS.
 
 ```sh
-cargo build --release      # produces ./target/release/teatop-rs
+cargo build --release      # produces ./target/release/teatop
 ```
 
 **Linux** uses `/proc`, `sysfs`, `statvfs` and NVIDIA NVML directly. GPU
@@ -40,14 +39,13 @@ process's connections/IO needs `sudo`.
 **macOS** uses the cross-platform [`sysinfo`](https://crates.io/crates/sysinfo)
 backend, plus `nettop` for per-connection bandwidth (no root needed) and
 `proc_pid_rusage` (libproc) for per-process disk I/O (other users' processes
-need `sudo`). As on the Go build, the GPU section hides itself, and CPU
-frequency/temperature and the aggregate disk-throughput readout are not
-available.
+need `sudo`). The GPU section hides itself, and CPU frequency/temperature and
+the aggregate disk-throughput readout are not available.
 
 ## Usage
 
 ```
-teatop-rs [options]
+teatop [options]
 
   -d, -delay int    update interval in ms (100 to 5000, default 1000)
   -c, -all-cpus     show the per-core bar chart on startup
@@ -90,18 +88,17 @@ cargo test           # run the suite
 cargo clippy         # lints
 ```
 
-## Notes on the port
+## Implementation notes
 
-This is a faithful reimplementation of the Go original. The Bubble Tea model
-maps to a hand-rolled crossterm event loop, and lipgloss styling to a small
-ANSI helper. The metric layer mirrors gopsutil's per-platform split:
+A hand-rolled crossterm event loop drives the UI, with a small ANSI helper for
+styling. The metric layer splits per platform:
 
 - **Linux** — direct `/proc` and `sysfs` reads (via the `procfs` crate) plus
-  `statvfs`, go-nvml → `nvml-wrapper`, and the sock_diag netlink code as a
-  `libc` raw-socket port of the same byte layout.
+  `statvfs`, `nvml-wrapper` for GPU telemetry, and sock_diag netlink over a
+  `libc` raw socket.
 - **macOS** — the `sysinfo` crate for CPU/memory/load/uptime/network/disk/
-  processes, a port of the Go `nettop` parser for per-connection bandwidth,
-  and `proc_pid_rusage`/`proc_pidinfo` (libproc) for per-process disk I/O.
+  processes, a `nettop` parser for per-connection bandwidth, and
+  `proc_pid_rusage`/`proc_pidinfo` (libproc) for per-process disk I/O.
 
 The Linux build is verified end to end; the macOS build is type-checked
-against `aarch64-apple-darwin` and mirrors the Go darwin behaviour.
+against `aarch64-apple-darwin`.
