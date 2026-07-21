@@ -36,8 +36,17 @@ impl System {
     pub fn fetch_external_ip(&self) {
         let slot = Arc::clone(&self.ext_ip);
         std::thread::spawn(move || {
+            // ureq defaults to Rustls, which is only compiled in on Linux; on
+            // macOS the native-tls provider has to be selected explicitly or
+            // the request panics.
+            let provider = if cfg!(target_os = "linux") {
+                ureq::tls::TlsProvider::Rustls
+            } else {
+                ureq::tls::TlsProvider::NativeTls
+            };
             let agent: ureq::Agent = ureq::Agent::config_builder()
                 .timeout_global(Some(Duration::from_secs(5)))
+                .tls_config(ureq::tls::TlsConfig::builder().provider(provider).build())
                 .build()
                 .into();
             if let Ok(mut resp) = agent.get("https://api.ipify.org").call() {
